@@ -260,9 +260,13 @@ do
 		return blacklisted
 	end})
 
+	local function hasOwnText(frame)
+		return (LossOfControlFrame and frame == LossOfControlFrame.Cooldown) or (frame.SetCooldownTimes and frame.Text)
+	end
+
 	--returns true if the given frame is blacklisted, and false otherwise
 	function OmniCC:IsBlacklisted(frame)
-		return (self:UsingBlacklist() and blacklistCache[frame]) or frame.noCooldownCount
+		return (self:UsingBlacklist() and blacklistCache[frame]) or frame.noCooldownCount or hasOwnText(frame)
 	end
 
 	--purges the blacklist cache
@@ -432,7 +436,7 @@ end
 
 function OmniCC:SetShowCooldownModels(enable)
 	self:GetDB().showCooldownModels = enable and true or false
-	self.Timer:ForAllShownCooldowns(cooldown_Hide)
+	self.Timer:ForAllShownCooldowns(cooldown_Hide, enable)
 end
 
 function OmniCC:ShowingCooldownModels()

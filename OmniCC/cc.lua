@@ -34,6 +34,8 @@ local GetTime = GetTime
 
 local Timer = Classy:New('Frame'); Timer:Hide(); OmniCC.Timer = Timer
 local timers = {}
+local hooked = setmetatable({}, {__mode = 'k'})
+local hideNumbers = setmetatable({}, {__mode = 'k'})
 
 --[[ Constructorish ]]--
 
@@ -101,6 +103,7 @@ function Timer:Stop()
 	self.nextUpdate = nil
 
 	self:Hide()
+	self:UpdateNativeText()
 	return self
 end
 
@@ -164,6 +167,8 @@ function Timer:UpdateText(forceStyleUpdate)
 
 			self.nextUpdate = nextUpdate
 		end
+
+		self:UpdateNativeText()
 	else
 		--if the timer was long enough to, and text is still visible
 		--then trigger a finish effect
@@ -181,6 +186,20 @@ function Timer:UpdateShown()
 		self:Show()
 	else
 		self:Hide()
+	end
+
+	self:UpdateNativeText()
+	return self
+end
+
+function Timer:UpdateNativeText()
+	local native = self.cooldown.CooldownText
+	if native and native.Text then
+		if self:IsShown() and self.text:IsShown() then
+			native.Text:Hide()
+		else
+			native.Text:Show()
+		end
 	end
 
 	return self
@@ -264,6 +283,10 @@ function Timer:ShouldShow()
 		return false
 	end
 
+	if hideNumbers[self.cooldown] then
+		return false
+	end
+
 	return true
 end
 
@@ -344,7 +367,7 @@ local function cooldown_Init(self)
 	self:HookScript('OnShow', cooldown_OnShow)
 	self:HookScript('OnHide', cooldown_OnHide)
 	self:HookScript('OnSizeChanged', cooldown_OnSizeChanged)
-	self.omnicc = true
+	hooked[self] = true
 
 	return self
 end
@@ -358,7 +381,7 @@ local function cooldown_OnSetCooldown(self, start, duration)
 	end
 
 	--create timer if it does not exist yet
-	if(not self.omnicc) then
+	if(not hooked[self]) then
 		cooldown_Init(self)
 	end
 
@@ -377,7 +400,22 @@ local function cooldown_OnSetCooldown(self, start, duration)
 	end
 end
 
-hooksecurefunc(getmetatable(ActionButton1Cooldown).__index, 'SetCooldown', cooldown_OnSetCooldown)
+local function cooldown_OnSetHideCountdownNumbers(self, hide)
+	hideNumbers[self] = hide and true or nil
+
+	local timer = Timer:Get(self)
+	if timer then
+		timer:UpdateShown()
+	end
+end
+
+local cooldownMeta = getmetatable(ActionButton1Cooldown).__index
+
+hooksecurefunc(cooldownMeta, 'SetCooldown', cooldown_OnSetCooldown)
+
+if cooldownMeta.SetHideCountdownNumbers then
+	hooksecurefunc(cooldownMeta, 'SetHideCountdownNumbers', cooldown_OnSetHideCountdownNumbers)
+end
 
 --bugfix: force update timers when entering an arena
 do
