@@ -20,6 +20,10 @@ local DAY, HOUR, MINUTE = 86400, 3600, 60 --used for formatting text
 local DAYISH, HOURISH, MINUTEHALFISH, MINUTEISH, SOONISH = 3600 * 23.5, 60 * 59.5, 89.5, 59.5, 5.5 --used for formatting text at transition points
 local HALFDAYISH, HALFHOURISH, HALFMINUTEISH = DAY/2 + 0.5, HOUR/2 + 0.5, MINUTE/2 + 0.5 --used for calculating next update times
 local PADDING = 0 --amount of spacing between the timer text and the rest of the cooldown
+local DAY_SUFFIX, HOUR_SUFFIX, MINUTE_SUFFIX = 'd', 'h', 'm'
+if GetLocale() == 'ruRU' then
+	DAY_SUFFIX, HOUR_SUFFIX, MINUTE_SUFFIX = 'д', 'ч', 'м'
+end
 
 --local bindings!
 local floor = math.floor
@@ -162,7 +166,6 @@ function Timer:UpdateText(forceStyleUpdate)
 				self.textStyle = period
 				self.text:SetTextColor(OmniCC:GetPeriodColor(period))
 				self:SetScale(OmniCC:GetPeriodScale(period))
-				self.textStyle = textStyle
 			end
 
 			self.nextUpdate = nextUpdate
@@ -249,15 +252,15 @@ function Timer:GetTimeText(s)
 	--format text as minutes when below an hour
 	elseif s < HOURISH then
 		local minutes = round(s/MINUTE)
-		return minutes .. 'm', minutes > 1 and (s - (minutes*MINUTE - HALFMINUTEISH)) or (s - MINUTEISH)
+		return minutes .. MINUTE_SUFFIX, minutes > 1 and (s - (minutes*MINUTE - HALFMINUTEISH)) or (s - MINUTEISH)
 	--format text as hours when below a day
 	elseif s < DAYISH then
 		local hours = round(s/HOUR)
-		return hours .. 'h', hours > 1 and (s - (hours*HOUR - HALFHOURISH)) or (s - HOURISH)
+		return hours .. HOUR_SUFFIX, hours > 1 and (s - (hours*HOUR - HALFHOURISH)) or (s - HOURISH)
 	--format text as days
 	else
 		local days = round(s/DAY)
-		return days .. 'd', days > 1 and (s - (days*DAY - HALFDAYISH)) or (s - DAYISH)
+		return days .. DAY_SUFFIX, days > 1 and (s - (days*DAY - HALFDAYISH)) or (s - DAYISH)
 	end
 end
 
@@ -377,6 +380,10 @@ local function cooldown_OnSetCooldown(self, start, duration)
 
 	--don't display cooldown info if the timer is blacklisted
 	if OmniCC:IsBlacklisted(self) then
+		local timer = Timer:Get(self)
+		if timer then
+			timer:Stop()
+		end
 		return
 	end
 

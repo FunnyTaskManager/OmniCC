@@ -199,6 +199,7 @@ function OmniCC:AddToBlacklist(patternToAdd)
 		local blacklist = self:GetBlacklist()
 		table.insert(blacklist, patternToAdd)
 		table.sort(blacklist)
+		self.Timer:ForAll('UpdateShown')
 
 		for i, pattern in pairs(blacklist) do
 			if pattern == patternToAdd then
@@ -218,6 +219,7 @@ function OmniCC:RemoveFromBlacklist(patternToRemove)
 		self:ClearBlacklistCache()
 
 		table.remove(self:GetBlacklist(), index)
+		self.Timer:ForAll('UpdateShown')
 		return true
 	end
 end
@@ -321,7 +323,7 @@ end
 
 --create an object to track font size changes
 do
-	local fontFace, fontSize, fontOutline, fontScale = STANDARD_TEXT_FONT, 18, 'OUTINE', 1
+	local fontFace, fontSize, fontOutline, fontScale = STANDARD_TEXT_FONT, 18, 'OUTLINE', 1
 
 	--create a basic frame for testing font size changes
 	local tester = CreateFrame('Frame', nil, UIParent)
@@ -331,7 +333,7 @@ do
 	local text = tester:CreateFontString()
 	text:SetFont(fontFace, fontSize, fontOutline)
 	text:SetText('10s') --text that maps to whatever the longest possible string for cooldown text is
-	text:SetPoint('CENTER', f)
+	text:SetPoint('CENTER', tester)
 	tester.text = text
 
 	--recalculate font info
